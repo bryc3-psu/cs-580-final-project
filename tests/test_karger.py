@@ -20,6 +20,14 @@ class TestUnion:
     assert uf.count == 1
     assert uf.find(0) == 0
 
+  def test_initial_with_different_count(self):
+    # passing count changes only the count var
+    uf = UnionFind(10, count=5)
+    assert uf.count == 5
+    assert len(uf.parent) == 10
+    assert len(uf.size) == 10
+
+
   # -------------------------------------------------
   # find tests
   # -------------------------------------------------
@@ -32,17 +40,17 @@ class TestUnion:
   def test_find_after_union(self):
     # merged nodes return the same root, unmerged nodes do not
     uf = UnionFind(5)
-    uf.union(0, 1)
-    uf.union(2, 3)
+    uf.merge((0, 1))
+    uf.merge((2, 3))
     assert uf.find(0) == uf.find(1)
     assert uf.find(2) == uf.find(3)
-    assert uf.find(4) != uf.find(0)
+    assert uf.find(4) != uf.find(5)
 
   def test_find_transitivity(self):
     # indirectly merged nodes share a root
     uf = UnionFind(5)
-    uf.union(0, 1)
-    uf.union(1, 2)
+    uf.merge((0, 1))
+    uf.merge((1, 2))
     assert uf.find(0) == uf.find(2)
 
   def test_find_path_compression(self):
@@ -60,7 +68,7 @@ class TestUnion:
   def test_union_distinct_supernodes(self):
     # union merges distinct supernodes and decrements count
     uf = UnionFind(5)
-    result = uf.union(0, 1)
+    result = uf.merge((0, 1))
     assert result == True
     assert uf.find(0) == uf.find(1)
     assert uf.count == 4
@@ -68,46 +76,46 @@ class TestUnion:
   def test_union_same_supernode(self):
     # union on already-merged nodes returns False and doesn't change count
     uf = UnionFind(5)
-    uf.union(0, 1)
-    result = uf.union(0, 1)
+    uf.merge((0, 1))
+    result = uf.merge((0, 1))
     assert result == False
     assert uf.count == 4
 
   def test_union_size_tracking(self):
     # size of tree is accurate
     uf = UnionFind(4)
-    uf.union(0, 1)
+    uf.merge((0, 1))
     assert uf.size[uf.find(0)] == 2
-    uf.union(2, 3)
-    uf.union(0, 2)
+    uf.merge((2, 3))
+    uf.merge((0, 2))
     assert uf.size[uf.find(0)] == 4
 
   def test_union_by_size_larger_becomes_root(self):
     # larger supernode is the root after union
     uf = UnionFind(5)
-    uf.union(0, 1)
-    uf.union(0, 2)  # size root0 = 3
-    uf.union(3, 4)  # size root3 = 2
-    uf.union(0, 3)
+    uf.merge((0, 1))
+    uf.merge((0, 2))  # size root0 = 3
+    uf.merge((3, 4))  # size root3 = 2
+    uf.merge((0, 3))
     assert uf.find(3) == uf.find(0)
     assert uf.size[uf.find(0)] == 5
 
   def test_union_all_nodes(self):
     # merging all nodes leaves one supernode
     uf = UnionFind(5)
-    uf.union(0, 1)
-    uf.union(1, 2)
-    uf.union(2, 3)
-    uf.union(3, 4)
+    uf.merge((0, 1))
+    uf.merge((1, 2))
+    uf.merge((2, 3))
+    uf.merge((3, 4))
     assert uf.count == 1
     assert len(set(uf.find(i) for i in range(5))) == 1
 
   def test_union_independent_supernodes(self):
     # unions doesnt effect independent supernodes
     uf = UnionFind(6)
-    uf.union(0, 1)
-    uf.union(2, 3)
-    uf.union(4, 5)
+    uf.merge((0, 1))
+    uf.merge((2, 3))
+    uf.merge((4, 5))
     assert uf.count == 3
     assert uf.find(0) == uf.find(1)
     assert uf.find(2) == uf.find(3)

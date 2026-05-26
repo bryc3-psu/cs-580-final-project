@@ -110,7 +110,8 @@ class Karger:
       uf.merge(random.choice(remaining))
       remaining = [(x,y) for x, y in remaining if uf.find(x) != uf.find(y)]
 
-    return remaining
+    # returning uf for testing, can drop it later
+    return remaining, uf
 
   def _stein_rec(self, edges: list[tuple[int, int]], num_supernodes: int) -> int:
     """
@@ -125,14 +126,17 @@ class Karger:
     Returns:
       int: number of remaining edges (i.e. the min-cut value found)
     """
-    if num_supernodes <= 2:
-      return len(edges)
+    if num_supernodes <= 3:
+      remaining, _ = self._contract(edges, num_supernodes=num_supernodes, stop_at=2)
+      return len(remaining)
 
-    next_stop = ceil(num_supernodes / sqrt(2)) + 1
-    remaining = self._contract(edges, num_supernodes=num_supernodes, stop_at=next_stop)
+    next_stop = ceil(num_supernodes / sqrt(2))
+    remaining, uf = self._contract(edges, num_supernodes=num_supernodes, stop_at=next_stop)
 
-    first = self._stein_rec(remaining, num_supernodes=next_stop)
-    second = self._stein_rec(remaining, num_supernodes=next_stop)
+    actual_supernodes = uf.count
+    print(f"num_supernodes={num_supernodes}, next_stop={next_stop}, actual_supernodes={actual_supernodes}, len(remaining)={len(remaining)}")
+    first = self._stein_rec(remaining, num_supernodes=actual_supernodes)
+    second = self._stein_rec(remaining, num_supernodes=actual_supernodes)
 
     return min(first, second)
     
@@ -143,7 +147,7 @@ class Karger:
     Returns:
       int: number of remaining edges (i.e. the min-cut value found)
     """
-    return len(self._contract(self.edges, num_supernodes=self.n, stop_at=2))
+    return len(self._contract(self.edges, num_supernodes=self.n, stop_at=2)[0])
 
   def karger_repeated(self, num_runs: int) -> tuple[int, int]:
     """

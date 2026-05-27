@@ -134,7 +134,7 @@ class Karger:
     remaining, uf = self._contract(edges, num_supernodes=num_supernodes, stop_at=next_stop)
 
     actual_supernodes = uf.count
-    print(f"num_supernodes={num_supernodes}, next_stop={next_stop}, actual_supernodes={actual_supernodes}, len(remaining)={len(remaining)}")
+    #print(f"num_supernodes={num_supernodes}, next_stop={next_stop}, actual_supernodes={actual_supernodes}, len(remaining)={len(remaining)}")
     first = self._stein_rec(remaining, num_supernodes=actual_supernodes)
     second = self._stein_rec(remaining, num_supernodes=actual_supernodes)
 

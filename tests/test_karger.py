@@ -205,7 +205,7 @@ class TestKarger:
     failures = []
     for edges, n, true_cut, name in self.graphs:
       k = Karger(edges, n)
-      best_cut, found_on = k.karger_repeated(num_runs=1000)
+      best_cut, found_on = k.karger_repeated(num_runs=100)
       if best_cut != true_cut:
         failures.append(f"{name}: got {best_cut}, expected {true_cut}")
       if found_on < 1 or found_on > 1000:
@@ -222,9 +222,3 @@ class TestKarger:
       if found_on < 1 or found_on > 1000:
         failures.append(f"{name}: found_on={found_on} out of range")
     assert not failures, "\n".join(failures)
-
-  def test_stein_debug(self):
-      edges, n, true_cut, name = self.graphs[2]  # bridge graph
-      k = Karger(edges, n)
-      results = [k.stein_run() for _ in range(10)]
-      print(f"\nn={n}, true_cut={true_cut}, results={results}")

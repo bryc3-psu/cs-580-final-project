@@ -1,32 +1,45 @@
-import networkx
+import os
 import pickle 
+import random
+import networkx
+from dataclasses import dataclass
 
+# this will be the object used in experiments
+@dataclass
+class GraphInstance:
+  edges: list[tuple[int, int]]
+  n: int
+  true_cut: int
+  label: str
 
-def graphgenerator(parameters, k):
-    megadictionary = {} 
-    for (n,p) in parameters:
-        collection = [] 
-        for i in range(1, k):
-            collection.append(networkx.to_dict_of_lists(networkx.erdos_renyi_graph(n,p)))
-        megadictionary.update({(n,p):collection})
-    return megadictionary
+class GraphGenerator:
+  # default params
+  k = 100
+  allowed_sizes = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+  weights = {"er": 0.4, "ba": 0.4, "pp": 0.2}
 
+  def _er_generator(self) -> list[GraphInstance]:
+    pass
 
+  def _ba_generator(self) -> list[GraphInstance]:
+    pass
 
-def parametergenerator(start, step, count, probs):
-    parameters = [] 
-    for i in range(1, count): 
-        for p in probs: 
-           parameters.append((start,p))
-        start = start+step 
-    return parameters 
+  def _pp_generator(self) -> list[GraphInstance]:
+    pass
 
+  def generate(
+    self, 
+    k: int = None, 
+    n_values: list[int] = None, 
+    weights: dict = None
+  ) -> list[GraphInstance]:
+    if k is not None: self.k = k
+    if n_values is not None: self.allowed_sizes = n_values
+    if weights is not None: self.weights = weights
 
-def main() :
-    pmtr = parametergenerator(10, 10, 10, [0.1, 0.25, 0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.8, 1])
-    g = graphgenerator(pmtr, 3)
-    print(g)
-    with open("megadictionary.pkl", "wb") as file:
-        pickle.dump(g, file)
+    results = []
+    for gen_func in [self._er_generator(), self._ba_generator(), self._pp_generator()]:
+      results.extend(gen_func())
 
-main() 
+    return results
+

@@ -1,5 +1,3 @@
-import os
-import pickle 
 import random
 import networkx
 from dataclasses import dataclass
@@ -13,15 +11,8 @@ class GraphInstance:
   label: str
 
 class GraphGenerator:
-  # default params
-  k = 100
   allowed_sizes = range(10, 101)
-  weights = {"er": 0.4, "ba": 0.4, "pp": 0.2}
 
-  def _real_k(self, graph_type: str) -> int:
-    total = sum(self.weights.values())
-    return round(self.k * self.weights.get(graph_type, 0) / total)
- 
   def _validate(self, G: networkx.Graph) -> bool:
     if G.number_of_nodes() < 2:
       return False
@@ -33,7 +24,7 @@ class GraphGenerator:
 
   def _make_instance(self, G: networkx.Graph, label: str) -> GraphInstance | None:
     try:
-      true_cut, _ = networkx.stoer_wagner(G)
+      true_cut, _ = networkx.edge_connectivity(G)
     except Exception:
       return None
 
@@ -44,20 +35,20 @@ class GraphGenerator:
             label=label
            )
 
-  def _er_generator(self) -> list[GraphInstance]:
-    """
-    Erdos-Renyi graph generator.
-
-    Gen Method:
-      - Start with n nodes
-      - For every possible pair of nodes, with probability p: add an edge
-    """
-    probs  = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 
-              0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
-    params = [(n, p) for n in self.allowed_sizes for p in probs]
+  # Erdos-Renyi
+  def generate_er (
+    self,
+    k: int,
+    n_values: list[int] = None,
+    p_values: list[float] = None,
+  ) -> list[GraphInstance]:
+    if n_values is None: n_values = self.allowed_sizes
+    if p_values is None: p_values = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 
+                                     0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
 
     results = []
-    while len(results) < self._real_k("er"):
+    params = [(n, p) for n in n_values for p in p_values]
+    while len(results) < k:
       n, p = random.choice(params)
       G = networkx.erdos_renyi_graph(n, p)
       if self._validate(G):
@@ -67,92 +58,65 @@ class GraphGenerator:
 
     return results
 
-
-  def _ba_generator(self) -> list[GraphInstance]:
-    """
-    Barabasi-Ablert graph generator.
-
-    Gen Method:
-      - Start with small initial graph
-      - Keep adding nodes until n nodes total using the following strategy:
-      - With probability proportional to each nodes degree: create m edges
-    """
-    m_values = range(1, 6)
-    params   = [(n, m) for n in self.allowed_sizes for m in m_values if m < n]
-
-    results  = []
-    while len(results) < self._real_k("ba"):
-      n, m = random.choice(params)
-      G = networkx.barabasi_albert_graph(n, m)
-      if self._validate(G):
-        instance = self._make_instance(G, label=f"ba-{n}-{m}")
-        if instance is not None:
-          results.append(instance)
-    return results
-
-  def _pp_generator(self) -> list[GraphInstance]:
-    """
-    Planted Partition graph generator.
-
-    Gen Method:
-      - Start with l groups of size k
-      - For nodes in the same group: add en edge with probability p_in
-      - For nodes in a different group: add en edge with probability p_out
-      - Note: p_in >> p_out creates dense, well seperated clusters
-    """
-    p_in_values  = [0.5, 0.6, 0.7, 0.8, 0.9]
-    p_out_values = [0.01, 0.05, 0.07, 0.1]
-    params = [
-      (l, k, p_in, p_out)
-      for n in self.allowed_sizes
-      for l in [2, 3, 4, 5]
-      for k in [n // l] if k >= 2
-      for p_in in p_in_values
-      for p_out in p_out_values
-    ]
-
-    results = []
-    while len(results) < self._real_k("pp"):
-      l, k, p_in, p_out = random.choice(params)
-      G = networkx.planted_partition_graph(l, k, p_in, p_out)
-      if self._validate(G):
-        instance = self._make_instance(G, label=f"pp-{l}-{k}-{p_in}-{p_out}")
-        if instance is not None:
-          results.append(instance)
-
-    return results
-
-  def generate(
-    self, 
-    k: int = None, 
-    n_values: list[int] = None, 
-    weights: dict = None
+  # Random Regular
+  def generate_rr(
+    self,
+    k: int,
+    n_values: list[int] = None,
+    d_values: list[int] = None,
   ) -> list[GraphInstance]:
-    if k is not None: self.k = k
-    if n_values is not None: self.allowed_sizes = n_values
-    if weights is not None: self.weights = weights
+    if n_values is None: n_values = self.allowed_sizes
+    if d_values is None: d_values = [3, 4, 5, 6, 8, 10]
 
     results = []
-    for name, gen_func in [("ER", self._er_generator), ("BA", self._ba_generator), ("PP", self._pp_generator)]:
-      print(f"Generating {name} graphs...")
-      results.extend(gen_func())
+    params  = [(n, d) for n in n_values for d in d_values if n > d and (n * d) % 2 == 0]
+    while len(results) < k:
+      n, d = random.choice(params)
+      G = networkx.random_regular_graph(d, n)
+      if self._validate(G):
+        instance = self._make_instance(G, label=f"rr-{n}-{d}")
+        if instance is not None:
+          results.append(instance)
 
     return results
-
-def main():
-  path = "./data/graphs.pkl"
-  if os.path.exists(path):
-    print(f"'{path}' already exists, either move/rename/delete it before generating.")
-    return
-
-  graphs = GraphGenerator().generate()
-  with open(path, "wb") as file:
-    pickle.dump(graphs, file)
-
-  print()
-  print(f"Done! Saved {len(graphs)} generated graphs to '{path}'.")
  
- 
-if __name__ == "__main__":
-  main()
+  # Barbell
+  def generate_barbell(
+    self,
+    k: int,
+    m1_values: list[int] = None,
+    m2_values: list[int] = None,
+  ) -> list[GraphInstance]:
+    if m1_values is None: m1_values = list(range(3, 21))
+    if m2_values is None: m2_values = list(range(0, 4))
 
+    results = []
+    params  = [(m1, m2) for m1 in m1_values for m2 in m2_values]
+    while len(results) < k:
+      m1, m2 = random.choice(params)
+      G = networkx.barbell_graph(m1, m2)
+      if self._validate(G):
+        results.append(self._make_instance_known(G, label=f"bb-{m1}", true_cut=1))
+
+    return results
+ 
+  # Ring of Cliques
+  def generate_ring_of_cliques(
+    self,
+    k: int,
+    num_cliques_values: list[int] = None,
+    clique_size_values: list[int] = None,
+  ) -> list[GraphInstance]:
+    if num_cliques_values is None: num_cliques_values = list(range(3, 11))
+    if clique_size_values is None: clique_size_values = list(range(3, 11))
+
+    results = []
+    params  = [(nc, cs) for nc in num_cliques_values for cs in clique_size_values]
+    while len(results) < k:
+      nc, cs = random.choice(params)
+      G = networkx.ring_of_cliques(nc, cs)
+      if self._validate(G):
+        results.append(self._make_instance_known(G, label=f"roc-{nc}-{cs}", true_cut=2))
+
+    return results
+ 

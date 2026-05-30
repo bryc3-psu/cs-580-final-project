@@ -1,15 +1,17 @@
 # CS-580 Final Project: Karger  vs. Karger-Stein 
 
-Have these done in a couple days:
-## Experiment 1 -- Bryce
+## Modules
 
-sweep across number of runs and then comparre Succes vs Fail against true min-cut
+### `karger.py`
 
-## Experiment 2 -- Callie
+This module implements the classic karger and the karger-stein contraction algorithms using
+the UnionFind data structure for supernodes.
 
-measuring # of runs until min-cut returned == true min-cut
+**Interface**
 
-Need to:
- - loop through, collecting results
-
- return a table + matplotlib line graphs
+ 
+- `Karger(edges, n)` 
+- `karger_run()` -> `int` 
+- `karger_repeated(num_runs)` -> `(int, int)` 
+- `stein_run()` -> `int` 
+- `stein_repeated(num_runs)` -> `(int, int)` 

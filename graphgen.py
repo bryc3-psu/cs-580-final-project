@@ -22,12 +22,7 @@ class GraphGenerator:
       return False
     return True
 
-  def _make_instance(self, G: networkx.Graph, label: str) -> GraphInstance | None:
-    try:
-      true_cut, _ = networkx.edge_connectivity(G)
-    except Exception:
-      return None
-
+  def _make_instance(self, G: networkx.Graph, label: str, true_cut: int) -> GraphInstance:
     return GraphInstance(
             edges=list(G.edges()), 
             n=G.number_of_nodes(), 
@@ -52,9 +47,8 @@ class GraphGenerator:
       n, p = random.choice(params)
       G = networkx.erdos_renyi_graph(n, p)
       if self._validate(G):
-        instance = self._make_instance(G, label=f"er-{n}-{p}")
-        if instance is not None:
-          results.append(instance)
+        true_cut, _ = networkx.stoer_wagner(G)
+        results.append(self._make_instance(G, label=f"er-{n}-{p}", true_cut=true_cut))
 
     return results
 
@@ -74,9 +68,8 @@ class GraphGenerator:
       n, d = random.choice(params)
       G = networkx.random_regular_graph(d, n)
       if self._validate(G):
-        instance = self._make_instance(G, label=f"rr-{n}-{d}")
-        if instance is not None:
-          results.append(instance)
+        true_cut = networkx.edge_connectivity(G)
+        results.append(self._make_instance(G, label=f"rr-{n}-{d}", true_cut=true_cut))
 
     return results
  
@@ -84,19 +77,24 @@ class GraphGenerator:
   def generate_barbell(
     self,
     k: int,
-    m1_values: list[int] = None,
-    m2_values: list[int] = None,
+    n_values: list[int] = None,
   ) -> list[GraphInstance]:
-    if m1_values is None: m1_values = list(range(3, 21))
-    if m2_values is None: m2_values = list(range(0, 4))
+    if n_values is None: n_values = self.allowed_sizes
+    # for n, find all valid m1,m2 pairs (2*m1+m2 = n; m1 >= 3; m2 >= 0)
+    params = [
+      (m1, m2)
+      for n in n_values
+      for m1 in range(3, n)
+      for m2 in range(0, n)
+      if 2 * m1 + m2 == n
+    ]
 
     results = []
-    params  = [(m1, m2) for m1 in m1_values for m2 in m2_values]
     while len(results) < k:
       m1, m2 = random.choice(params)
       G = networkx.barbell_graph(m1, m2)
       if self._validate(G):
-        results.append(self._make_instance_known(G, label=f"bb-{m1}", true_cut=1))
+        results.append(self._make_instance(G, label=f"bb-{m1}-{m2}", true_cut=1))
 
     return results
  

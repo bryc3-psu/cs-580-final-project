@@ -1,19 +1,27 @@
 import os
 import pickle
+import random
+from multiprocessing import Pool
 from graphgen import GraphGenerator
 
-DATA_DIR = "./data/graphs"
+DATA_DIR = "./data/graphs/by_size"
 os.makedirs(DATA_DIR, exist_ok=True)
 gen = GraphGenerator()
+k = 100
 
-def _save(graphs, filename):
-  path = f"{DATA_DIR}/{filename}"
+def _save(graphs, path):
+  if os.path.exists(path):
+    print(f"'{os.path.basename(path)}' already exists, skipping...")
+    return
   with open(path, "wb") as file:
     pickle.dump(graphs, file)
+
   print(f"Saved {len(graphs)} graphs to '{path}'.")
 
+def generate_and_save(n):
+  graphs = gen.generate_er(k, n_values=[n])
+  _save(graphs, f"{DATA_DIR}/graphs_er_{n}.pkl")
 
-for n in range(10, 101, 5):
-  _save(gen.generate(k=100, weights={"er": 1.0, "ba": 0, "pp": 0}, n_values=[n]), f"graphs_size_{n}.pkl")
-
-print("\nDone!")
+if __name__ == "__main__":
+  with Pool() as pool:
+    pool.map(generate_and_save, range(10, 60, 10))

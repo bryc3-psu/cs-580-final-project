@@ -2,11 +2,33 @@
 
 This is an implementation of the Karger and Karger-Stein min-cut algorithms for our CS-580 final. 
 
----
+## Setup
+
+**Requires Python 3.10+**
+
+To get up and runing follow these steps:
+
+```bash
+# clone the repo
+git clone https://github.com/bryc3-psu/cs-580-final-project
+cd cs-580-final-project
+
+# create and source venv
+python -m venv .venv
+source .venv/bin/activate  # on Windows: .venv\Scripts\activate
+
+# install dependencies
+pip install -r requirements.txt
+pip install -e .
+
+# generate the graph dataset
+# note: this is computationally expensive and takes some time
+python scripts/generate_dataset.py
+```
 
 ## Scripts
 
-You can run these scripts to reproduce out results (after generating graphs wit `scripts/generate_dataset.py`)
+After setup you can run these scripts to reproduce our results.
 
 ### `scripts/exp1.py`
 For each graph of size $n$, run both algorithms $R=10$ times on each of the $100$ graphs and record the fraction of runs that successfully returned the true min-cut value. Then average the success rate across all $100$ graphs at each size to obtain an empirical per-trial success probability $p$.

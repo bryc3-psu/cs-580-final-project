@@ -220,3 +220,6 @@ __marimo__/
 .streamlit/secrets.toml
 data/graphs/
 data/exp1_*
+data/
+paper_bak.tex
+karger_stein.pdf
